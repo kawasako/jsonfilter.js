@@ -1,5 +1,5 @@
 /* !
- * filterBox.js
+ * jsonFilter.js
  * https://github.com/kawasako/jsonFilter.js
  * > String.prototype.to_ff
  * > http://mashimonator.weblike.jp/storage/library/20110916_002/demo/convertKana/js/half2full.js
@@ -77,6 +77,8 @@ JSONFilter.prototype = {
     var prop, target, data;
     var result = [];
     str = str.to_ff();
+    str = str.replace(/\　/g, ' ');
+    str = str.split(' ');
     // console.log(str); // :debug
     for (var i = this.formatData.length - 1; i >= 0; i--) {
       target = null;
@@ -86,7 +88,9 @@ JSONFilter.prototype = {
           // console.log(str); // :debug
           // console.log(prop); // :debug
           // console.log(this.formatData[i][prop].indexOf(str)); // :debug
-          if(-1 < this.formatData[i][prop].indexOf(str)) { target = prop; }
+          for (var j = str.length - 1; j >= 0; j--) {
+            if(str[j] && -1 < this.formatData[i][prop].indexOf(str[j])) { target = prop; }
+          };
         }
       }
       if(target) {
