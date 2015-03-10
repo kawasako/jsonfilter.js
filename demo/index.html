@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>jsonFilter.js - demo</title>
+<script src="../src/jsonFilter.js" charset="UTF-8"></script>
+<script>
+var testData = [
+  {
+    name: 'アッガイ',
+    number: '2'
+  },
+  {
+    name: 'ザク',
+    number: '702'
+  },
+  {
+    name: 'ガンダム',
+    number: '001'
+  },
+  {
+    name: 'ボール',
+    number: '002'
+  },
+  {
+    name: 'ガンキャノン',
+    number: '01'
+  },
+  {
+    name: 'ガンタンク',
+    number: '02'
+  },
+];
+var jf = new JSONFilter();
+var option;
+jf.init(testData);
+function render(list) {
+  // console.log(list); // :debug
+  document.getElementById('result').innerHTML = '';
+  for (var i = list.length - 1; i >= 0; i--) {
+    option = document.createElement('option');
+    option.innerHTML = jf.full(list[i]);
+    document.getElementById('result').appendChild(option);
+  };
+}
+</script>
+</head>
+<body>
+<input type="text" id="search" onkeyup="render(jf.filter(this.value));">
+<select id="result"></select>
+</body>
+</html>
