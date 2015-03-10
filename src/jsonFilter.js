@@ -72,32 +72,48 @@ JSONFilter.prototype = {
     };
     return this.formatData;
   },
+  createResultData: function(item, score, keys) {
+    var data = [];
+    return {
+      data: item,
+      score: score,
+      keys: keys
+    }
+  },
+  sortByScore: function(list) {
+    return list.sort(function(a, b){
+      return (a.score > b.score);
+    });
+  },
   filter: function(str) {
     if (!str) { return this.data; }
-    var prop, target, data;
+    var prop, keys, data, count;
     var result = [];
     str = str.to_ff();
     str = str.replace(/\　/g, ' ');
+    str = str.replace(/\ $/, '');
     str = str.split(' ');
     // console.log(str); // :debug
     for (var i = this.formatData.length - 1; i >= 0; i--) {
-      target = null;
-      for (prop in this.data[i]) {
-        // console.log(this.data[i].hasOwnProperty(prop)); // :debug
-        if(this.data[i].hasOwnProperty(prop) && typeof this.data[i][prop] == 'string') {
-          // console.log(str); // :debug
-          // console.log(prop); // :debug
-          // console.log(this.formatData[i][prop].indexOf(str)); // :debug
-          for (var j = str.length - 1; j >= 0; j--) {
-            if(str[j] && -1 < this.formatData[i][prop].indexOf(str[j])) { target = prop; }
+      keys = [];
+      count = 0;
+      for (var j = str.length - 1; j >= 0; j--) {
+        for (prop in this.data[i]) {
+          // console.log(this.data[i].hasOwnProperty(prop)); // :debug
+          if(this.data[i].hasOwnProperty(prop) && typeof this.data[i][prop] == 'string') {
+            // console.log(str); // :debug
+            // console.log(prop); // :debug
+            // console.log(this.formatData[i][prop].indexOf(str)); // :debug
+            if(str[j] && -1 < this.formatData[i][prop].indexOf(str[j])) { keys.push(prop); count++; }
           };
         }
       }
-      if(target) {
-        data = this.data[i];
+      if(0 < count) {
+        data = this.createResultData(this.data[i], count, keys);
         result.push(data);
       }
     };
+    result = this.sortByScore(result);
     return result;
   },
   suggest: function(str) {
@@ -109,8 +125,8 @@ JSONFilter.prototype = {
     // :todo 並び順がある場合を考慮する
     var prop;
     var result = '';
-    for(prop in item) {
-      result += item[prop] + ' ';
+    for(prop in item.data) {
+      result += item.data[prop] + ' ';
     }
     return result;
   }
