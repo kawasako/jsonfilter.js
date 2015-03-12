@@ -214,6 +214,9 @@ AutoComplete.prototype = {
     this.list.style.display = 'none';
   },
   render: function(items) {
+    if (!items) { return false; }
+    if (items.length < 1) { return false; }
+    if (!('keys' in items[0])) { return false; }
     var item, count;
     var _this = this;
     this.items = [];
