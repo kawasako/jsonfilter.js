@@ -52,11 +52,19 @@ String.prototype.to_ff = function() {
   return str.toUpperCase();
 };
 
+// Class::JSONFilter
+
 var JSONFilter = function() {};
 JSONFilter.prototype = {
-  init: function(data) {
+  init: function(data, kana) {
     this.data = data;
+    this.kana = kana ? kana : {};
     this.formatData = this.createFormatData();
+    this.result = [];
+  },
+  setKana: function(basePropName, kanaPropName) {
+    this.kana['kanaPropName'] = basePropName;
+    return this.kana;
   },
   createFormatData: function() {
     if(typeof this.data !== 'object') { return console.log('第一引数は配列である必要があります。'); }
@@ -85,14 +93,19 @@ JSONFilter.prototype = {
       return (a.score > b.score);
     });
   },
-  filter: function(str) {
-    if (!str) { return this.data; }
-    var prop, keys, data, count;
-    var result = [];
-    str = str.to_ff();
+  spaceSplit: function(str) {
     str = str.replace(/\　/g, ' ');
     str = str.replace(/\ $/, '');
     str = str.split(' ');
+    return str;
+  },
+  filter: function(str) {
+    if (!str) { return this.data; }
+    var prop, keys, data, count;
+    this.result = [];
+    str = str.to_ff();
+    str = this.spaceSplit(str);
+
     // console.log(str); // :debug
     for (var i = this.formatData.length - 1; i >= 0; i--) {
       keys = [];
@@ -104,19 +117,22 @@ JSONFilter.prototype = {
             // console.log(str); // :debug
             // console.log(prop); // :debug
             // console.log(this.formatData[i][prop].indexOf(str)); // :debug
-            if(str[j] && -1 < this.formatData[i][prop].indexOf(str[j])) { keys.push(prop); count++; }
+            if(str[j] && 0 == this.formatData[i][prop].indexOf(str[j])) {
+              if(prop in this.kana) { prop = this.kana[prop]; }
+              keys.push(prop);
+              count++;
+            }
+            // :todo 検索位置も加味したscore評価にする
           };
         }
       }
-      if(0 < count) {
+      if(str.length <= count) {
         data = this.createResultData(this.data[i], count, keys);
-        result.push(data);
+        this.result.push(data);
       }
     };
-    result = this.sortByScore(result);
-    return result;
-  },
-  suggest: function(str) {
+    this.result = this.sortByScore(this.result);
+    return this.result;
   },
   all: function() {
     return this.data;
@@ -129,5 +145,101 @@ JSONFilter.prototype = {
       result += item.data[prop] + ' ';
     }
     return result;
+  }
+};
+
+// Class::AutoComplete
+
+var AutoComplete = function() {};
+AutoComplete.prototype = {
+  init: function(jf, target, input, template) {
+    if(typeof template == 'undefined') {
+      this.template = '<div class="auto-complete-item">{{text}}</div>';
+    } else {
+      this.template = template;
+    }
+    this.jf = jf;
+    this.target = target;
+    this.input = input;
+    this.items = [];
+    this.create();
+    this.setEvent();
+    this.currentIndex = -1;
+  },
+  create: function() {
+    var _this = this;
+    this.list = document.createElement('div');
+    this.list.className = 'auto-complete-list';
+    // this.list.style.border = '1px solid #eee';
+    this.list.style.position = 'absolute';
+    this.list.style.zIndex = 99;
+    this.list.style.fontSize = '12px';
+    this.list.style.background = '#fff';
+    this.list.style.boxShadow = '1px 1px 3px rgba(0,0,0,0.5)';
+    this.hide();
+    this.target.appendChild(this.list);
+  },
+  setEvent: function() {
+    var _this = this;
+    // hide list
+    this.list.onclick = function() { _this.hide(); }
+    if(typeof document.addEventListener !== 'undefined') {
+      document.addEventListener('click', function(){　_this.hide();　});
+    }
+    // cursor list
+    this.input.onkeyup = function() {
+      // console.log(event.keyCode);
+      if (event.keyCode == 40 && _this.currentIndex < _this.items.length) {
+        if(_this.currentIndex in _this.items) { _this.items[_this.currentIndex].style.backgroundColor = '#fff'; }
+        _this.currentIndex++;
+        if(_this.currentIndex in _this.items) { _this.items[_this.currentIndex].style.backgroundColor = '#cef'; }
+        return false;
+      }else if (event.keyCode == 38 && _this.currentIndex > -1) {
+        if(_this.currentIndex in _this.items) { _this.items[_this.currentIndex].style.backgroundColor = '#fff'; }
+        _this.currentIndex--;
+        if(_this.currentIndex in _this.items) { _this.items[_this.currentIndex].style.backgroundColor = '#cef'; }
+        return false;
+      }else if (event.keyCode == 13 && _this.currentIndex in _this.items){
+        _this.items[_this.currentIndex].onclick();
+      }else {
+        var str, result;
+        str = _this.jf.spaceSplit(this.value);
+        str = str[str.length-1];
+        result = _this.jf.filter(str);
+        _this.render(result);
+      }
+    }
+  },
+  hide: function() {
+    this.list.style.display = 'none';
+  },
+  render: function(items) {
+    var item, count;
+    var _this = this;
+    this.items = [];
+    this.currentIndex = -1;
+    count = 0;
+    this.list.innerHTML = '';
+    for (var i = 0; i < items.length; i++) {
+      for (var j = 0; items[i].keys.length > j; j++) {
+        item = document.createElement('div');
+        item.className = 'auto-complete-item item-'+ i + '-' + j;
+        item.style.padding = '5px';
+        if(count%2 == 1) { item.style.background = '#eee' };
+        item.innerHTML = items[i].data[items[i].keys[j]];
+        item.data = items[i].data[items[i].keys[j]];
+        item.onclick = function() {
+          var result;
+          result = _this.jf.spaceSplit(_this.input.value)
+          result[result.length-1] = this.data;
+          _this.input.value = result.join('\ ');
+          _this.hide();
+        }
+        this.items.push(item);
+        this.list.appendChild(item);
+        count++;
+      };
+    };
+    this.list.style.display = 'block';
   }
 };

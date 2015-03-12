@@ -1,52 +1,75 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
+<meta charset="Shift_JIS">
 <title>jsonFilter.js - demo</title>
 <script src="../src/jsonFilter.js" charset="UTF-8"></script>
+</head>
+<body>
+<input type="text" id="search" onchange="render(jf.filter(this.value))">
+<div id="datalist"></div>
+<div id="count"></div>
+<select id="result"></select>
+
 <script>
 var testData = [
   {
-    name: '繧｢繝�繧ｬ繧､',
-    number: '2'
+    name: 'アッガイ',
+    number: '2',
+    info: '焦茶色とクリーム系ブラウンで塗装された、全体的に丸みを帯びている形状の水陸両用MS。モノアイレールは横方向の全周ターレットに加え、上方向にも設置されているために不要な機能とも判断されるが、画面では頭部を回転させるシーンが頻出する。戦闘後に口から白煙を吐くという光景も見受けられた[3]。'
   },
   {
-    name: '繧ｶ繧ｯ',
-    number: '702'
+
+    name: 'ザク',
+    number: '702',
+    info: 'アニメ『機動戦士ガンダム』では、第1話からほぼ全編にわたって登場している。宇宙世紀史上初めて実戦でMS同士が相対したのが、ガンダムと本機である[14]。しかし、序盤でこそ圧倒的な力を見せるも、本機を遥かに上回る性能をもつガンダムを有するホワイトベース隊に中盤まではやられ役となり、終盤では連邦軍MS隊によって次々に撃破されていった。テム・レイが住み込むジャンク屋に放置された頭部が哀愁を漂わせている。'
   },
   {
-    name: '繧ｬ繝ｳ繝繝',
-    number: '001'
+    name: 'ガンダム',
+    number: '001',
+    info: 'ザビ家はムンゾ首都をズム・シティに改名するなどジオンの継承者であると主張する一方で、密かに独立戦争遂行のための準備を進めていく。その準備と研究過程で産まれた新兵器がレーダーや電波を攪乱し、誘導兵器を無効化するミノフスキー粒子。そして、ミノフスキー粒子散布化で白兵戦を行える機動兵器モビルスーツ(MS)だった。'
   },
   {
-    name: '繝懊�ｼ繝ｫ',
+    name: 'ボール',
     number: '002'
   },
   {
-    name: '繧ｬ繝ｳ繧ｭ繝｣繝弱Φ',
+    name: 'ガンキャノン',
     number: '01'
   },
   {
-    name: '繧ｬ繝ｳ繧ｿ繝ｳ繧ｯ',
+    name: 'ガンタンク',
     number: '02'
   },
 ];
+
+var option, item, input;
+
 var jf = new JSONFilter();
-var option;
 jf.init(testData);
+
+var ac = new AutoComplete();
+ac.init(
+  jf,
+  document.getElementById('datalist'),
+  document.getElementById('search')
+);
+
+input = document.getElementById('search');
+
 function render(list) {
   // console.log(list); // :debug
   document.getElementById('result').innerHTML = '';
+  // document.getElementById('datalist').innerHTML = '';
+  document.getElementById('count').innerHTML = '';
   for (var i = list.length - 1; i >= 0; i--) {
     option = document.createElement('option');
-    option.innerHTML = jf.full(list[i]);
+    option.innerHTML = list[i].data.name;
     document.getElementById('result').appendChild(option);
   };
+  // document.getElementById('datalist').appendChild(jf.getListHTML('search'));
+  document.getElementById('count').innerHTML = list.length + ' 件見つかりました';
 }
 </script>
-</head>
-<body>
-<input type="text" id="search" onkeyup="render(jf.filter(this.value));">
-<select id="result"></select>
 </body>
 </html>
